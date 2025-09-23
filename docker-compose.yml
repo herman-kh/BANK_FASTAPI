@@ -1,0 +1,148 @@
+
+services:
+  # База данных для auth-service
+  auth_db:
+    image: postgres:15
+    container_name: auth_db
+    restart: always
+    environment:
+      POSTGRES_USER: amin
+      POSTGRES_PASSWORD: my_super_password
+      POSTGRES_DB: users
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # База данных для balance-service
+  balance_db:
+    image: postgres:15
+    container_name: balance_db
+    restart: always
+    environment:
+      POSTGRES_USER: amin
+      POSTGRES_PASSWORD: my_super_password
+      POSTGRES_DB: balances
+    ports:
+      - "5435:5432"
+    volumes:
+      - balance_db_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # Микросервисы
+  auth_service:
+    build: 
+      context: ./auth
+      dockerfile: Dockerfile
+    container_name: auth_service
+    restart: always
+    ports:
+      - "8001:8001"  
+    depends_on:
+      - auth_db
+    volumes:
+      - ./auth:/app  # Исправлен путь для Windows
+    env_file:
+      - ./auth/.env  # Исправлен путь
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://amin:my_super_password@auth_db:5432/auth_db
+    networks:
+      - app-network
+
+  message_service:
+    build:
+      context: ./messages
+      dockerfile: Dockerfile
+    container_name: message_service
+    restart: always
+    ports:
+      - "8002:8002"  # Изменен внутренний порт
+    volumes:
+      - ./messages:/app  # Исправлен путь
+    env_file:
+      - ./messages/.env  # Исправлен путь
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    networks:
+      - app-network
+
+  balance_service:
+    build:
+      context: ./balance
+      dockerfile: Dockerfile
+    container_name: balance_service
+    restart: always
+    ports:
+      - "8003:8000"  # Изменен внутренний порт
+    depends_on:
+      - balance_db  # Исправлено на balance_db
+    volumes:
+      - ./balance:/app  # Исправлен путь
+    env_file:
+      - ./balance/.env  # Исправлен путь
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://amin:my_super_password@balance_db:5432/balances
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    networks:
+      - app-network
+
+  # Kafka инфраструктура
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0  # Исправленная версия
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: "2181"
+      ZOOKEEPER_TICK_TIME: "2000"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: "1"
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # NGINX
+  nginx:
+    image: nginx:latest
+    container_name: nginx_gateway
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth_service
+      - message_service
+      - balance_service
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  auth_db_data:
+    driver: local
+  balance_db_data:
+    driver: local
+
+networks:
+  app-network:
+    name: app-network
+    driver: bridge
