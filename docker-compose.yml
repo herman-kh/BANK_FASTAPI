@@ -1,6 +1,6 @@
 
 services:
-  # База данных для auth-service
+
   auth_db:
     image: postgres:15
     container_name: auth_db
@@ -16,7 +16,7 @@ services:
     networks:
       - app-network
 
-  # База данных для balance-service
+
   balance_db:
     image: postgres:15
     container_name: balance_db
@@ -32,7 +32,7 @@ services:
     networks:
       - app-network
 
-  # Микросервисы
+ 
   auth_service:
     build: 
       context: ./auth
@@ -44,9 +44,9 @@ services:
     depends_on:
       - auth_db
     volumes:
-      - ./auth:/app  # Исправлен путь для Windows
+      - ./auth:/app  
     env_file:
-      - ./auth/.env  # Исправлен путь
+      - ./auth/.env  
     environment:
       - DATABASE_URL=postgresql+asyncpg://amin:my_super_password@auth_db:5432/auth_db
     networks:
@@ -59,11 +59,11 @@ services:
     container_name: message_service
     restart: always
     ports:
-      - "8002:8002"  # Изменен внутренний порт
+      - "8002:8002"  
     volumes:
-      - ./messages:/app  # Исправлен путь
+      - ./messages:/app  
     env_file:
-      - ./messages/.env  # Исправлен путь
+      - ./messages/.env 
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     networks:
@@ -76,22 +76,22 @@ services:
     container_name: balance_service
     restart: always
     ports:
-      - "8003:8000"  # Изменен внутренний порт
+      - "8003:8000"  
     depends_on:
-      - balance_db  # Исправлено на balance_db
+      - balance_db  
     volumes:
-      - ./balance:/app  # Исправлен путь
+      - ./balance:/app  
     env_file:
-      - ./balance/.env  # Исправлен путь
+      - ./balance/.env  
     environment:
       - DATABASE_URL=postgresql+asyncpg://amin:my_super_password@balance_db:5432/balances
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     networks:
       - app-network
 
-  # Kafka инфраструктура
+ 
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0  # Исправленная версия
+    image: confluentinc/cp-zookeeper:7.5.0  
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: "2181"
@@ -120,7 +120,7 @@ services:
       - app-network
     restart: unless-stopped
 
-  # NGINX
+  
   nginx:
     image: nginx:latest
     container_name: nginx_gateway
