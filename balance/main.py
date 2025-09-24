@@ -21,21 +21,17 @@ app.include_router(web.admin_router.router)
 async def lifespan(app: FastAPI):
     logger.info("Starting Kafka producer and consumer in background...")
     
-    # Запускаем продюсер и консьюмер в фоне
     consumer_task = asyncio.create_task(kafka_consumer.start_consumer())
     producer_task = asyncio.create_task(producer.start())
 
-    # Ждём небольшую паузу, чтобы uvicorn открыл порт
     await asyncio.sleep(0.1)
     
     try:
         yield
     finally:
         logger.info("Stopping Kafka producer and consumer...")
-        # Корректно останавливаем
         await kafka_consumer.stop_consumer()
         await producer.stop()
-        # Отменяем задачи на случай, если они еще живы
         consumer_task.cancel()
         producer_task.cancel()
         logger.info("Kafka producer and consumer stopped.")

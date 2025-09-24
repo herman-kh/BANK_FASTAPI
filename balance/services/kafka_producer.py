@@ -11,7 +11,7 @@ class KafkaProducer:
         logger.info("KafkaProducer initialized")
 
     async def start(self):
-        """Запуск продюсера с подробным логированием"""
+
         try:
             logger.info(f"Starting Kafka Producer...")
             logger.info(f"Connecting to: {settings.KAFKA_BOOTSTRAP_SERVERS}")
@@ -58,13 +58,12 @@ class KafkaProducer:
             logger.info(f"Preparing to send event for email: {email}")
             logger.debug(f"Event details: {json.dumps(event, indent=2)}")
             
-            # Отправляем сообщение
+    
             result = await self.producer.send_and_wait(
                 settings.KAFKA_BILL_EMAIL_TOPIC, 
                 event
             )
-            
-            # Логируем детали отправки
+
             logger.info(f"Successfully sent event for email: {email}")
             logger.info(f"Topic: {result.topic}, Partition: {result.partition}")
             logger.info(f"Offset: {result.offset}")
@@ -84,5 +83,5 @@ class KafkaProducer:
             raise
          
         
-# Глобальный инстанс продюсера
+
 producer = KafkaProducer()

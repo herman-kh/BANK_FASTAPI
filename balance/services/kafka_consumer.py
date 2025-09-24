@@ -17,7 +17,6 @@ class KafkaConsumerService:
         self.running = False
 
     async def start_consumer(self):
-        """Запуск Kafka consumer с автопереподключением"""
         max_retries = 10
         retry_delay = 5
 
@@ -56,7 +55,7 @@ class KafkaConsumerService:
                     break
 
     async def handle_user_created_event(self, message_data: Dict[str, Any]):
-        """Обработка события создания пользователя"""
+
         try:
             user_id = message_data.get('user_id')
             email=message_data.get('email')

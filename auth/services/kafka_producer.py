@@ -12,7 +12,6 @@ class KafkaProducer:
         logger.info("KafkaProducer initialized")
 
     async def start(self):
-        """Запуск продюсера с подробным логированием"""
         try:
             logger.info(f"Starting Kafka Producer...")
             logger.info(f"Connecting to: {settings.KAFKA_BOOTSTRAP_SERVERS}")
@@ -21,9 +20,9 @@ class KafkaProducer:
             self.producer = AIOKafkaProducer(
                 bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
                 value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-                acks="all",  # Гарантированная доставка
-                retry_backoff_ms=500,  # Повторные попытки при ошибках
-                enable_idempotence=True  # Гарантия exactly-once доставки
+                acks="all", 
+                retry_backoff_ms=500, 
+                enable_idempotence=True  
             )
             
             await self.producer.start()
@@ -48,7 +47,7 @@ class KafkaProducer:
             logger.warning("Producer was not started, nothing to stop")
 
     async def send_user_created(self, user_id: int, email: str):
-        """Отправка события создания пользователя"""
+
         if not self.producer:
             logger.error("Producer is not started. Call await producer.start() first")
             raise RuntimeError("Producer is not started")
@@ -65,13 +64,13 @@ class KafkaProducer:
             logger.info(event)
             logger.debug(f"Event details: {json.dumps(event, indent=2)}")
             
-            # Отправляем сообщение в правильный топик
+
             result = await self.producer.send_and_wait(
                 settings.KAFKA_USER_CREATED_TOPIC, 
                 event
             )
             
-            # Логируем детали отправки
+
             logger.info(f"Successfully sent user_created event for user_id: {user_id}")
             logger.info(f"Topic: {result.topic}, Partition: {result.partition}")
             logger.info(f"Offset: {result.offset}")
@@ -91,7 +90,7 @@ class KafkaProducer:
             raise
 
     async def send_registration_verify_message(self, code: int, email: str):
-        """Отправка кода подтверждения регистрации"""
+
         if not self.producer:
             logger.error("Producer is not started. Call await producer.start() first")
             raise RuntimeError("Producer is not started")
@@ -128,7 +127,7 @@ class KafkaProducer:
         except Exception as e:
             logger.error(f"Failed to send verification code to {email}: {e}")
             logger.error("Check if topic exists and Kafka is accessible")
-            # Можно добавить повторную попытку или отложенную отправку
+
             raise
 
     async def send_message_to_all_users(self, emails: list[str], message: str) -> dict:
@@ -148,13 +147,13 @@ class KafkaProducer:
                 logger.info(f"Preparing to send event for email: {email}")
                 logger.debug(f"Event details: {json.dumps(event, indent=2)}")
             
-            # Отправляем сообщение
+   
                 result = await self.producer.send_and_wait(
                     settings.KAFKA_MESSAGE_FOR_ALL_USERS, 
                     event
                 )
             
-            # Логируем детали отправки
+         
                 logger.info(f"Successfully sent event for email: {email}")
                 logger.info(f"Topic: {result.topic}, Partition: {result.partition}")
                 logger.info(f"Offset: {result.offset}")
@@ -172,5 +171,5 @@ class KafkaProducer:
             logger.error("Check topic exists and Kafka is accessible")
             raise
 
-# Глобальный инстанс продюсера
+
 producer = KafkaProducer()

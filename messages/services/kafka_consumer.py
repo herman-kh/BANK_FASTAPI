@@ -16,7 +16,6 @@ class KafkaConsumerService:
         self.running = False
 
     async def start_consumer(self):
-        """Запуск Kafka consumer с автопереподключением"""
         self.running = True
 
         while self.running:
@@ -62,14 +61,12 @@ class KafkaConsumerService:
                     self.consumer = None
 
     async def stop_consumer(self):
-        """Остановка Kafka consumer"""
         self.running = False
         if self.consumer:
             await self.consumer.stop()
             logger.info("Kafka consumer stopped")
 
     async def handle_user_code_for_verify_registration_event(self, message_data: Dict[str, Any]):
-        """Обработка события отправки кода подтверждения"""
         try:
             from_email = settings.FROM_EMAIL
             password = settings.EMAIL_KEY
@@ -88,7 +85,6 @@ class KafkaConsumerService:
             logger.error(f"Error processing registration event: {e}")
 
     async def handle_bill_message(self, message_data: Dict[str, Any]):
-        """Обработка события с биллом"""
         try:
             from_email = settings.FROM_EMAIL
             password = settings.EMAIL_KEY
