@@ -72,3 +72,86 @@ KAFKA_USER_CREATED_TOPIC=user_created
 KAFKA_BILL_EMAIL_TOPIC=bill_sent
 KAFKA_GROUP_ID=balance_service
 ```
+
+### Installation & Run
+
+1. Clone the repository:
+```bash
+git clone <your_repo_url>
+cd BANK_FASTAPI
+```
+2. Create .env files in each service directory using the configs above.
+
+3. Start the project with Docker Compose:
+```bash
+docker-compose up --build
+```
+
+### After Launch
+
+Auth Service → http://localhost:8001 (via /auth)
+Message Service → http://localhost:8002 (via /message)
+Balance Service → http://localhost:8003 (via /balance)
+Nginx reverse proxy → http://localhost:8000
+
+API path format:
+
+```
+http://localhost:8000/{service}/{endpoint}
+```
+
+### 🔐 Auth Service API
+
+Base path: /auth
+
+Endpoints:
+
+POST /register
+POST /register/verify
+POST /auth
+POST /refresh
+
+Admin-only endpoints:
+
+POST /send_all_users_message
+PATCH /update_user_status
+GET /get_all_users
+DELETE /delete_user
+
+### 💳 Balance Service API
+
+Base path: /balance
+
+Endpoints:
+
+POST /change_money
+POST /transfer_money
+POST /deposit
+GET /watch_balance
+
+Admin-only endpoints:
+
+GET /get_all_users
+PATCH /update_commission_for_transfers
+PATCH /update_exchange_rate
+
+📚 Interactive Documentation
+
+Auth Service: http://localhost:8000/auth/docs
+Message Service: http://localhost:8000/message/docs
+Balance Service: http://localhost:8000/balance/docs
+
+⚠️ Important Features
+
+Kafka – inter-service communication (Auth ↔ Balance ↔ Message)
+Databases – PostgreSQL (separate DB for each service)
+Tokens – JWT with separate access & refresh tokens
+Email Verification – confirmation codes sent on registration
+
+🏗️ Architecture
+
+Microservices – each service runs independently
+Message Broker – Apache Kafka for async communication
+Reverse Proxy – Nginx for routing requests
+Databases – separate PostgreSQL instance per service
+Containerization – Docker & Docker Compose
